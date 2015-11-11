@@ -23,6 +23,7 @@ class AdminVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         self.navigationItem.title = selectedUser
         print("selectedUser: \(selectedUser)")
         
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "reloadAdminView:", name: "reloadAdminViewTable", object: nil)
         
     }
 
@@ -32,7 +33,14 @@ class AdminVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     }
     
     override func viewWillAppear(animated: Bool) {
+        print("viewWillAppear")
         super.viewWillAppear(animated)
+        dataFromServer = []
+        updateTable()
+    }
+    
+    func reloadAdminView(notification: NSNotification) {
+        print("Notification")
         dataFromServer = []
         updateTable()
     }
@@ -85,6 +93,7 @@ class AdminVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
             let indexPath = tableView.indexPathForSelectedRow!
             print("Vote to dis: \(dataFromServer[indexPath.row])")
             displayVote.vote = dataFromServer[indexPath.row]
+            displayVote.sendFromAdmin = true
         }
     }
 

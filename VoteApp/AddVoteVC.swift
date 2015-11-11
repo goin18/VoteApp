@@ -9,17 +9,30 @@
 import UIKit
 import Parse
 
-class AddVoteVC: UIViewController {
+var answers = [["Placeholder" : "Answer:", "Answer" :""]]
 
+class AddVoteVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
+
+    
+    
+    @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var questionTextField: UITextField!
-    @IBOutlet weak var answerATF: UITextField!
-    @IBOutlet weak var answerBTF: UITextField!
-    @IBOutlet weak var answerCTF: UITextField!
-    @IBOutlet weak var answerDTF: UITextField!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "reloadTable:", name: "reloadTableName", object: nil)
+        
+        tableView.dataSource = self
+        tableView.delegate = self
+        
+        questionTextField.delegate = self
         // Do any additional setup after loading the view.
+    }
+    
+    func reloadTable(notification: NSNotification) {
+        print("Notification")
+        tableView.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -27,31 +40,51 @@ class AddVoteVC: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    @IBAction func removeKeyButtonPress(sender: UIButton) {
-        print("Resign first responder")
-        answerATF.resignFirstResponder()
-        answerBTF.resignFirstResponder()
-        answerCTF.resignFirstResponder()
-        answerDTF.resignFirstResponder()
+    @IBAction func addNewAnswer(sender: UIButton) {
+        let newTF = ["Placeholder" : "Answer:", "Answer" :""]
+        answers.append(newTF)
+        tableView.reloadData()
+    }
+    
+    @IBAction func removeAnswer(sender: UIButton) {
+        
+        
     }
     
     @IBAction func saveVoteButtonPress(sender: AnyObject) {
         
+        var answersParseTable:[[String]] = []
+        var i = 0
+        for ans in answers {
+            let x = [ans["Answer"]!, "0", "\(i)"]
+            answersParseTable.append(x)
+            i += 1
+        }
+        
         let vote = PFObject(className: "Vote")
+       
         vote[voteQuestion] = questionTextField.text!
-        
-        vote[voteAnswerA] = answerATF.text!
-        vote[voteAnswerB] = answerBTF.text!
-        vote[voteAnswerC] = answerCTF.text!
-        vote[voteAnswerD] = answerDTF.text!
-        
         vote[voteNumber] = 0
-        vote[voteNumberA] = 0
-        vote[voteNumberB] = 0
-        vote[voteNumberC] = 0
-        vote[voteNumberD] = 0
-        
+        vote["Answer"] = answersParseTable
         vote[voteDete] = NSDate()
+        
+        //Send notification:
+        let pushQuery = PFInstallation.query()
+        //set TimeIntervall
+        let interval = Double(60 * 60) //(24h) * 24 -> * 7 -> 7 days
+        
+        let data = [
+            "alert":"You receive a new Question.",
+            "sound": "default",
+            "badge": "Increment"
+        ]
+        
+        let push = PFPush()
+        push.setQuery(pushQuery) // Set our Installation query
+        
+        push.expireAfterTimeInterval(interval)
+        push.setData(data as [NSObject : AnyObject])
+        push.sendPushInBackground()
         
         vote.saveInBackgroundWithBlock { (succeeded, error) -> Void in
             if let err = error {
@@ -59,6 +92,7 @@ class AddVoteVC: UIViewController {
             } else {
                 if succeeded {
                     print("Save success")
+                    NSNotificationCenter.defaultCenter().postNotificationName("reloadAdminViewTable", object: nil)
                     self.dismissViewControllerAnimated(true, completion: nil)
                 } else {
                     print("Save problem")
@@ -72,14 +106,95 @@ class AddVoteVC: UIViewController {
     @IBAction func cancelButtonPress(sender: UIButton) {
         self.dismissViewControllerAnimated(true, completion: nil)
     }
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    
+    //MARK: 
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return answers.count
     }
-    */
 
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        
+        var cell = tableView.dequeueReusableCellWithIdentifier("addAnswerCell") as! addAnswersCell
+        let data = answers[indexPath.row]
+        //print("\(data)")
+        
+        cell.configure(text: data["Answer"]!, placeholder: data["Placeholder"]!, tag: indexPath.row)
+
+        return cell
+        
+    }
+    
+    //UITextFieldDelegate
+    func textFieldDidEndEditing(textField: UITextField) {
+        print("End")
+        resignFirstResponder()
+        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+    }
+    
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        resignFirstResponder()
+        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+        return true
+    }
+
+}
+
+class addAnswersCell: UITableViewCell, UITextFieldDelegate {
+    
+    @IBOutlet weak var answerTextField: UITextField!
+    @IBOutlet weak var buttonX: UIButton!
+    
+    func configure(text text:String, placeholder:String, tag: Int){
+        answerTextField.delegate = self
+        
+        answerTextField.tag = tag
+        buttonX.tag = tag
+        answerTextField.text = text
+        answerTextField.placeholder = placeholder
+        
+    
+    }
+    
+    func textFieldDidBeginEditing(textField: UITextField) {
+//        let newTF = ["Placeholder" : "Answer:", "Answer" : ""]
+//        answers[textField.tag] = newTF
+//        
+//        textField.becomeFirstResponder()
+
+
+    }
+    
+    func textFieldDidEndEditing(textField: UITextField) {
+        let newTF = ["Placeholder" : "Answer:", "Answer" : "\(textField.text!)"]
+        print("tag: \(textField.tag)")
+        answers[textField.tag] = newTF
+        buttonX.highlighted = false
+        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+    }
+    
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        resignFirstResponder()
+        textFieldDidEndEditing(textField)
+        return true
+    }
+    
+    func textFieldShouldEndEditing(textField: UITextField) -> Bool {
+        textFieldDidEndEditing(textField)
+        print("textFieldShouldEndEditing")
+        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+
+        return true
+    }
+
+    @IBAction func removeCellButtonPress(sender: UIButton) {
+
+        print("TAG: \(sender.tag)")
+        print("ans: \(answers.count)")
+        print("H: \(sender.highlighted)")
+        textFieldDidEndEditing(answerTextField)
+        answers.removeAtIndex(sender.tag)
+        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+        
+    }
 }

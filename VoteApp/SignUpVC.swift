@@ -16,11 +16,22 @@ class SignUpVC: UIViewController {
     @IBOutlet weak var emailTextField: UITextField!
     @IBOutlet weak var passwordTextField: UITextField!
     
+//    @IBOutlet weak var setAdminOrUser: UISwitch!
     override func viewDidLoad() {
         super.viewDidLoad()
 
         self.navigationItem.title = "SignUp"
         // Do any additional setup after loading the view.
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        userNameTextField.text = ""
+        emailTextField.text = ""
+        passwordTextField.text = ""
+        
+//        setAdminOrUser.setOn(false, animated: true)
     }
 
     override func didReceiveMemoryWarning() {
@@ -38,8 +49,9 @@ class SignUpVC: UIViewController {
             user.password = passwordTextField.text!
             user.email = emailTextField.text!
             
-            user["admin"] = false
-            user["answered"] = ["empty"]
+            
+            user["admin"] = false //setAdminOrUser.on
+            user["answered"] = []
             
             
             user.signUpInBackgroundWithBlock({ (succeeded, error) -> Void in
@@ -54,9 +66,19 @@ class SignUpVC: UIViewController {
                     installation.saveInBackgroundWithBlock(nil)
 
                     //go to new screen
-                    let pVC = self.storyboard?.instantiateViewControllerWithIdentifier("navUser")
-                    pVC!.modalTransitionStyle = UIModalTransitionStyle.CrossDissolve
-                    self.presentViewController(pVC!, animated: true, completion: nil)
+                    
+//                    if self.setAdminOrUser.on {
+//                        
+//                        let pVC = self.storyboard?.instantiateViewControllerWithIdentifier("adminNav")
+//                        pVC!.modalTransitionStyle = UIModalTransitionStyle.CrossDissolve
+//                        self.presentViewController(pVC!, animated: true, completion: nil)
+//                        
+//                    } else {
+                        let pVC = self.storyboard?.instantiateViewControllerWithIdentifier("navUser")
+                        pVC!.modalTransitionStyle = UIModalTransitionStyle.CrossDissolve
+                        self.presentViewController(pVC!, animated: true, completion: nil)
+//                    }
+                    
                 }
             })
         
@@ -68,7 +90,7 @@ class SignUpVC: UIViewController {
     //MARK: HelperMetod
     func displayAlertWithButton(message: String) {
         
-        let alertController = UIAlertController(title: "Error", message: "Missing some data.", preferredStyle: UIAlertControllerStyle.Alert)
+        let alertController = UIAlertController(title: "Error", message: message, preferredStyle: UIAlertControllerStyle.Alert)
         let alertAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil)
         
         alertController.addAction(alertAction)

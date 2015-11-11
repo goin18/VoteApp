@@ -28,6 +28,7 @@ class UserVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
     }
     
     override func viewWillAppear(animated: Bool) {
+
         super.viewWillAppear(animated)
         dataFromNoAnswerd = []
         dataFromAnswerd = []
@@ -98,20 +99,21 @@ class UserVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
             performSegueWithIdentifier("displayVoteUserSegue", sender: nil)
         }
     }
-
     
     //MARK: Helper Methods
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == "displayVoteUserSegue" {
             let displayVote = segue.destinationViewController as! AdminVoteDisplayVC
             let indexPath = tableView.indexPathForSelectedRow!
-            //print("Vote to dis: \(dataFromAnswerd[indexPath.row])")
+//            print("Vote to dis: \(dataFromAnswerd[indexPath.row])")
             displayVote.vote = dataFromAnswerd[indexPath.row]
+            displayVote.sendFromAdmin = false
+        
         } else if segue.identifier == "userVoteSegue" {
             let answerVote = segue.destinationViewController as! UserVoteVC
             let indexPath = tableView.indexPathForSelectedRow!
-            //print("Vote to dis: \(dataFromAnswerd[indexPath.row])")
-            answerVote.vote = dataFromAnswerd[indexPath.row]
+//            print("Vote to dis: \(dataFromNoAnswerd[indexPath.row])")
+            answerVote.vote = dataFromNoAnswerd[indexPath.row]
         }
     }
     
@@ -124,14 +126,22 @@ class UserVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
                 //self.tableView.reloadData()
                 let user = PFUser.currentUser()
                 for vote in votes! as [PFObject] {
-                    print("Vote: \(vote)")
+//                    print("Vote: \(vote)")
+//                    print("USer: \(user!)")
                     
-                    for ans in user!["answered"] as! [String]{
-                        if vote.objectId == ans {
-                            self.dataFromAnswerd.append(vote)
-                        } else {
-                            self.dataFromNoAnswerd.append(vote)
+                    var insert = true
+                    for ans in user!["answered"] as! [[String]]{
+                        print("Ans: \(ans)")
+                        if !ans.isEmpty {
+                            if vote.objectId == ans[0] {
+                                self.dataFromAnswerd.append(vote)
+                                insert = false
+                            }
                         }
+                    }
+                    
+                    if insert {
+                        self.dataFromNoAnswerd.append(vote)
                     }
                 }
                 self.tableView.reloadData()
