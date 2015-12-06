@@ -9,14 +9,18 @@
 import UIKit
 import Parse
 
+protocol testDelegate {
+    func myDelegate()
+}
+
 var answers = [["Placeholder" : "Answer:", "Answer" :""]]
 
 class AddVoteVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
 
-    
-    
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var questionTextField: UITextField!
+    
+    var delegate: testDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,7 +56,7 @@ class AddVoteVC: UIViewController, UITableViewDataSource, UITableViewDelegate, U
     }
     
     @IBAction func saveVoteButtonPress(sender: AnyObject) {
-        
+
         var answersParseTable:[[String]] = []
         var i = 0
         for ans in answers {
@@ -93,6 +97,7 @@ class AddVoteVC: UIViewController, UITableViewDataSource, UITableViewDelegate, U
                 if succeeded {
                     print("Save success")
                     NSNotificationCenter.defaultCenter().postNotificationName("reloadAdminViewTable", object: nil)
+                    answers = [["Placeholder" : "Answer:", "Answer" :""]]
                     self.dismissViewControllerAnimated(true, completion: nil)
                 } else {
                     print("Save problem")
@@ -115,28 +120,27 @@ class AddVoteVC: UIViewController, UITableViewDataSource, UITableViewDelegate, U
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         
-        var cell = tableView.dequeueReusableCellWithIdentifier("addAnswerCell") as! addAnswersCell
+        let cell = tableView.dequeueReusableCellWithIdentifier("addAnswerCell") as! addAnswersCell
         let data = answers[indexPath.row]
-        //print("\(data)")
         
         cell.configure(text: data["Answer"]!, placeholder: data["Placeholder"]!, tag: indexPath.row)
-
+        cell.selectionStyle = UITableViewCellSelectionStyle.None
         return cell
         
     }
     
-    //UITextFieldDelegate
-    func textFieldDidEndEditing(textField: UITextField) {
-        print("End")
-        resignFirstResponder()
-        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
-    }
-    
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
-        resignFirstResponder()
-        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
-        return true
-    }
+//    //UITextFieldDelegate
+//    func textFieldDidEndEditing(textField: UITextField) {
+//        print("End")
+//        resignFirstResponder()
+//        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+//    }
+//    
+//    func textFieldShouldReturn(textField: UITextField) -> Bool {
+//        resignFirstResponder()
+//        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
+//        return true
+//    }
 
 }
 
@@ -152,49 +156,44 @@ class addAnswersCell: UITableViewCell, UITextFieldDelegate {
         buttonX.tag = tag
         answerTextField.text = text
         answerTextField.placeholder = placeholder
-        
     
     }
     
-    func textFieldDidBeginEditing(textField: UITextField) {
-//        let newTF = ["Placeholder" : "Answer:", "Answer" : ""]
-//        answers[textField.tag] = newTF
-//        
-//        textField.becomeFirstResponder()
 
-
-    }
-    
-    func textFieldDidEndEditing(textField: UITextField) {
-        let newTF = ["Placeholder" : "Answer:", "Answer" : "\(textField.text!)"]
-        print("tag: \(textField.tag)")
-        answers[textField.tag] = newTF
-        buttonX.highlighted = false
-        NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
-    }
-    
     func textFieldShouldReturn(textField: UITextField) -> Bool {
         resignFirstResponder()
-        textFieldDidEndEditing(textField)
+//        textFieldDidEndEditing(textField)
         return true
     }
-    
+
     func textFieldShouldEndEditing(textField: UITextField) -> Bool {
-        textFieldDidEndEditing(textField)
+//        textFieldDidEndEditing(textField)
         print("textFieldShouldEndEditing")
         NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
 
         return true
     }
+    
+    func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool {
+        let newTF = ["Placeholder" : "Answer:", "Answer" : "\(textField.text! + string)"]
+        print("tag: \(textField.tag)")
+        answers[textField.tag] = newTF
+        buttonX.highlighted = false
+        
+        return true
+    }
+
 
     @IBAction func removeCellButtonPress(sender: UIButton) {
 
         print("TAG: \(sender.tag)")
         print("ans: \(answers.count)")
         print("H: \(sender.highlighted)")
-        textFieldDidEndEditing(answerTextField)
+//        textFieldDidEndEditing(answerTextField)
         answers.removeAtIndex(sender.tag)
+        answers = [["Placeholder" : "Answer:", "Answer" :""]]
         NSNotificationCenter.defaultCenter().postNotificationName("reloadTableName", object: nil)
         
     }
+    
 }
